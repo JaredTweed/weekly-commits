@@ -3,13 +3,17 @@
 A COSMIC desktop applet that mirrors the GNOME Weekly Commits extension from
 `weekly-commits-main.zip`.
 
-## Build
+## Install
 
 ```sh
-cargo build
+just build
+just install
 ```
 
-## Run
+After installing, log out of your COSMIC session and log back in so the
+applet is picked up by the desktop shell.
+
+## Run Manually
 
 ```sh
 cargo run --bin cosmic-weekly-commits
