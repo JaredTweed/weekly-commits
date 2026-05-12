@@ -1,0 +1,24 @@
+[package]
+name = "cosmic-weekly-commits"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+default-run = "cosmic-weekly-commits"
+
+[dependencies]
+libcosmic = { git = "https://github.com/pop-os/libcosmic", rev = "564ef834cec33a948dc10c9b401cf29db5d18373", default-features = false, features = ["applet"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+time = { version = "0.3", features = ["formatting", "local-offset", "macros", "parsing"] }
+tokio = { version = "1", features = ["process", "rt-multi-thread", "time"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+dirs = "6"
+
+[[bin]]
+name = "cosmic-weekly-commits"
+path = "src/main.rs"
+
+[[bin]]
+name = "cosmic-weekly-commits-settings"
+path = "src/settings.rs"
