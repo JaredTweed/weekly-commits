@@ -144,12 +144,24 @@ impl cosmic::Application for Applet {
     }
 
     fn view(&self) -> Element<'_, Self::Message> {
+        let theme = match self.settings.theme_mode {
+            weekly::ThemeMode::SystemAccent => {
+                let accent = cosmic::theme::active().cosmic().accent_color();
+                let r = (accent.red * 255.0).round() as u8;
+                let g = (accent.green * 255.0).round() as u8;
+                let b = (accent.blue * 255.0).round() as u8;
+                weekly::accent_theme((r, g, b))
+            }
+            weekly::ThemeMode::GitHub => weekly::github_theme(),
+            weekly::ThemeMode::Custom => weekly::custom_theme(self.settings.custom_hue),
+        };
+
         let row = self.data.counts.iter().enumerate().fold(
             widget::Row::new().spacing(0),
             |row, (index, count)| {
                 let row = row.push(commit_box(
                     *count,
-                    self.settings.theme_name,
+                    &theme,
                     self.settings.color_mode,
                     self.settings.highlight_current_day && self.data.dates[index] == today(),
                 ));
@@ -280,12 +292,12 @@ fn panel_button_width() -> f32 {
 
 fn commit_box<'a>(
     count: u32,
-    theme_name: weekly::ThemeName,
+    theme: &weekly::Theme,
     color_mode: weekly::ColorMode,
     highlight: bool,
 ) -> Element<'a, Message> {
     let color = weekly::hex_to_rgba(
-        weekly::box_hex_color(count, theme_name, color_mode),
+        weekly::box_hex_color(count, theme, color_mode),
         if count == 0 {
             0.12
         } else {

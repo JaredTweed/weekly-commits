@@ -17,7 +17,8 @@ const REFRESH_INTERVALS: [(u64, &str); 8] = [
 #[derive(Clone, Debug)]
 enum Message {
     ServiceSelected(usize),
-    ThemeSelected(usize),
+    ThemeModeSelected(usize),
+    HueChanged(u16),
     ColorModeSelected(usize),
     WeekStartSelected(usize),
     IntervalSelected(usize),
@@ -64,10 +65,13 @@ impl Application for SettingsApp {
                     self.settings.service_type = *value;
                 }
             }
-            Message::ThemeSelected(index) => {
-                if let Some(value) = weekly::ThemeName::ALL.get(index) {
-                    self.settings.theme_name = *value;
+            Message::ThemeModeSelected(index) => {
+                if let Some(value) = weekly::ThemeMode::ALL.get(index) {
+                    self.settings.theme_mode = *value;
                 }
+            }
+            Message::HueChanged(hue) => {
+                self.settings.custom_hue = hue;
             }
             Message::ColorModeSelected(index) => {
                 if let Some(value) = weekly::ColorMode::ALL.get(index) {
@@ -109,7 +113,7 @@ impl Application for SettingsApp {
 
     fn view(&self) -> Element<'_, Self::Message> {
         let service_labels = vec!["GitHub", "Gitea / Forgejo", "GitLab"];
-        let theme_labels: Vec<&'static str> = weekly::ThemeName::ALL
+        let theme_mode_labels: Vec<&'static str> = weekly::ThemeMode::ALL
             .iter()
             .map(|value| value.label())
             .collect();
@@ -213,13 +217,28 @@ impl Application for SettingsApp {
             ))
             .add(settings_item(
                 "Color Theme",
-                "Select a color theme for commit visualization",
+                "Choose system accent, GitHub theme, or a custom color",
                 dropdown(
-                    theme_labels,
-                    selected_index(&weekly::ThemeName::ALL, self.settings.theme_name),
-                    Message::ThemeSelected,
+                    theme_mode_labels,
+                    selected_index(&weekly::ThemeMode::ALL, self.settings.theme_mode),
+                    Message::ThemeModeSelected,
                 ),
-            ));
+            ))
+            .add_maybe(
+                (self.settings.theme_mode == weekly::ThemeMode::Custom).then(|| {
+                    settings_item(
+                        "Hue",
+                        "",
+                        widget::slider(
+                            0u16..=360u16,
+                            self.settings.custom_hue,
+                            Message::HueChanged,
+                        )
+                        .width(Length::Fixed(220.0))
+                        .into(),
+                    )
+                }),
+            );
 
         let info_group = widget::settings::section()
             .title(token_title(self.settings.service_type))

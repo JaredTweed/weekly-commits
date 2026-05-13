@@ -107,171 +107,121 @@ impl WeekdayStart {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum ThemeName {
-    Standard,
-    Classic,
-    GitHubDark,
-    Halloween,
-    Teal,
-    LeftPad,
-    Dracula,
-    Blue,
-    Panda,
-    Sunny,
-    Pink,
-    YlGnBu,
-    SolarizedDark,
-    SolarizedLight,
+pub enum ThemeMode {
+    SystemAccent,
+    GitHub,
+    Custom,
 }
 
-impl ThemeName {
-    pub const ALL: [ThemeName; 14] = [
-        Self::Standard,
-        Self::Classic,
-        Self::GitHubDark,
-        Self::Halloween,
-        Self::Teal,
-        Self::LeftPad,
-        Self::Dracula,
-        Self::Blue,
-        Self::Panda,
-        Self::Sunny,
-        Self::Pink,
-        Self::YlGnBu,
-        Self::SolarizedDark,
-        Self::SolarizedLight,
-    ];
+impl ThemeMode {
+    pub const ALL: [ThemeMode; 3] = [Self::SystemAccent, Self::GitHub, Self::Custom];
 
     pub fn label(self) -> &'static str {
         match self {
-            Self::Standard => "GitHub",
-            Self::Classic => "GitHub Classic",
-            Self::GitHubDark => "GitHub Dark",
-            Self::Halloween => "Halloween",
-            Self::Teal => "Teal",
-            Self::LeftPad => "@left_pad",
-            Self::Dracula => "Dracula",
-            Self::Blue => "Blue",
-            Self::Panda => "Panda",
-            Self::Sunny => "Sunny",
-            Self::Pink => "Pink",
-            Self::YlGnBu => "YlGnBu",
-            Self::SolarizedDark => "Solarized Dark",
-            Self::SolarizedLight => "Solarized Light",
+            Self::SystemAccent => "System Accent Color",
+            Self::GitHub => "GitHub",
+            Self::Custom => "Custom",
         }
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Theme {
-    pub grade0: &'static str,
-    pub grade1: &'static str,
-    pub grade2: &'static str,
-    pub grade3: &'static str,
-    pub grade4: &'static str,
+    pub grade0: String,
+    pub grade1: String,
+    pub grade2: String,
+    pub grade3: String,
+    pub grade4: String,
 }
 
-pub fn theme(name: ThemeName) -> Theme {
-    match name {
-        ThemeName::Standard => Theme {
-            grade4: "#216e39",
-            grade3: "#30a14e",
-            grade2: "#40c463",
-            grade1: "#9be9a8",
-            grade0: "#ebedf0",
-        },
-        ThemeName::Classic => Theme {
-            grade4: "#196127",
-            grade3: "#239a3b",
-            grade2: "#7bc96f",
-            grade1: "#c6e48b",
-            grade0: "#ebedf0",
-        },
-        ThemeName::GitHubDark => Theme {
-            grade4: "#27d545",
-            grade3: "#10983d",
-            grade2: "#00602d",
-            grade1: "#003820",
-            grade0: "#161b22",
-        },
-        ThemeName::Halloween => Theme {
-            grade4: "#03001C",
-            grade3: "#FE9600",
-            grade2: "#FFC501",
-            grade1: "#FFEE4A",
-            grade0: "#ebedf0",
-        },
-        ThemeName::Teal => Theme {
-            grade4: "#458B74",
-            grade3: "#66CDAA",
-            grade2: "#76EEC6",
-            grade1: "#7FFFD4",
-            grade0: "#ebedf0",
-        },
-        ThemeName::LeftPad => Theme {
-            grade4: "#F6F6F6",
-            grade3: "#DDDDDD",
-            grade2: "#A5A5A5",
-            grade1: "#646464",
-            grade0: "#2F2F2F",
-        },
-        ThemeName::Dracula => Theme {
-            grade4: "#ff79c6",
-            grade3: "#bd93f9",
-            grade2: "#6272a4",
-            grade1: "#44475a",
-            grade0: "#282a36",
-        },
-        ThemeName::Blue => Theme {
-            grade4: "#4F83BF",
-            grade3: "#416895",
-            grade2: "#344E6C",
-            grade1: "#263342",
-            grade0: "#222222",
-        },
-        ThemeName::Panda => Theme {
-            grade4: "#FF4B82",
-            grade3: "#19f9d8",
-            grade2: "#6FC1FF",
-            grade1: "#34353B",
-            grade0: "#242526",
-        },
-        ThemeName::Sunny => Theme {
-            grade4: "#a98600",
-            grade3: "#dab600",
-            grade2: "#e9d700",
-            grade1: "#f8ed62",
-            grade0: "#fff9ae",
-        },
-        ThemeName::Pink => Theme {
-            grade4: "#61185f",
-            grade3: "#a74aa8",
-            grade2: "#ca5bcc",
-            grade1: "#e48bdc",
-            grade0: "#ebedf0",
-        },
-        ThemeName::YlGnBu => Theme {
-            grade4: "#253494",
-            grade3: "#2c7fb8",
-            grade2: "#41b6c4",
-            grade1: "#a1dab4",
-            grade0: "#ebedf0",
-        },
-        ThemeName::SolarizedDark => Theme {
-            grade4: "#d33682",
-            grade3: "#b58900",
-            grade2: "#2aa198",
-            grade1: "#268bd2",
-            grade0: "#073642",
-        },
-        ThemeName::SolarizedLight => Theme {
-            grade4: "#6c71c4",
-            grade3: "#dc322f",
-            grade2: "#cb4b16",
-            grade1: "#b58900",
-            grade0: "#eee8d5",
-        },
+pub fn github_theme() -> Theme {
+    Theme {
+        grade4: "#216e39".into(),
+        grade3: "#30a14e".into(),
+        grade2: "#40c463".into(),
+        grade1: "#9be9a8".into(),
+        grade0: "#ebedf0".into(),
     }
+}
+
+pub fn custom_theme(hue: u16) -> Theme {
+    let h = hue as f64;
+    Theme {
+        grade4: hsl_to_hex(h, 0.70, 0.38),
+        grade3: hsl_to_hex(h, 0.60, 0.50),
+        grade2: hsl_to_hex(h, 0.45, 0.65),
+        grade1: hsl_to_hex(h, 0.25, 0.80),
+        grade0: "#ebedf0".into(),
+    }
+}
+
+pub fn accent_theme(accent_rgb: (u8, u8, u8)) -> Theme {
+    let (h, s, _) = rgb_to_hsl(accent_rgb.0, accent_rgb.1, accent_rgb.2);
+    let saturation = if s < 0.1 { 0.70 } else { s };
+    Theme {
+        grade4: hsl_to_hex(h, saturation, 0.38),
+        grade3: hsl_to_hex(h, saturation, 0.50),
+        grade2: hsl_to_hex(h, saturation * 0.75, 0.65),
+        grade1: hsl_to_hex(h, saturation * 0.45, 0.80),
+        grade0: "#ebedf0".into(),
+    }
+}
+
+pub fn hsl_to_hex(h: f64, s: f64, l: f64) -> String {
+    let (r, g, b) = hsl_to_rgb(h, s, l);
+    format!("#{r:02x}{g:02x}{b:02x}")
+}
+
+pub fn hsl_to_rgb(h: f64, s: f64, l: f64) -> (u8, u8, u8) {
+    let c = (1.0 - (2.0 * l - 1.0).abs()) * s;
+    let hh = (h % 360.0) / 60.0;
+    let x = c * (1.0 - (hh % 2.0 - 1.0).abs());
+    let m = l - c / 2.0;
+
+    let (r, g, b) = match hh.floor() as u32 {
+        0 => (c, x, 0.0),
+        1 => (x, c, 0.0),
+        2 => (0.0, c, x),
+        3 => (0.0, x, c),
+        4 => (x, 0.0, c),
+        _ => (c, 0.0, x),
+    };
+
+    (
+        ((r + m) * 255.0).round() as u8,
+        ((g + m) * 255.0).round() as u8,
+        ((b + m) * 255.0).round() as u8,
+    )
+}
+
+pub fn rgb_to_hsl(r: u8, g: u8, b: u8) -> (f64, f64, f64) {
+    let r = r as f64 / 255.0;
+    let g = g as f64 / 255.0;
+    let b = b as f64 / 255.0;
+    let max = r.max(g).max(b);
+    let min = r.min(g).min(b);
+    let l = (max + min) / 2.0;
+
+    if (max - min).abs() < f64::EPSILON {
+        return (0.0, 0.0, l);
+    }
+
+    let d = max - min;
+    let s = if l > 0.5 {
+        d / (2.0 - max - min)
+    } else {
+        d / (max + min)
+    };
+
+    let h = if r == max {
+        (g - b) / d + if g < b { 6.0 } else { 0.0 }
+    } else if g == max {
+        (b - r) / d + 2.0
+    } else {
+        (r - g) / d + 4.0
+    };
+
+    (h * 60.0, s, l)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -285,7 +235,8 @@ pub struct Settings {
     pub show_current_week_only: bool,
     pub week_start_day: WeekdayStart,
     pub highlight_current_day: bool,
-    pub theme_name: ThemeName,
+    pub theme_mode: ThemeMode,
+    pub custom_hue: u16,
     pub color_mode: ColorMode,
 }
 
@@ -300,7 +251,8 @@ impl Default for Settings {
             show_current_week_only: false,
             week_start_day: WeekdayStart::Monday,
             highlight_current_day: false,
-            theme_name: ThemeName::Standard,
+            theme_mode: ThemeMode::GitHub,
+            custom_hue: 120,
             color_mode: ColorMode::Opacity,
         }
     }
@@ -765,20 +717,19 @@ pub fn grade(count: u32) -> &'static str {
     }
 }
 
-pub fn box_hex_color(count: u32, theme_name: ThemeName, color_mode: ColorMode) -> &'static str {
+pub fn box_hex_color<'a>(count: u32, theme: &'a Theme, color_mode: ColorMode) -> &'a str {
     if count == 0 {
         return "#ffffff";
     }
 
-    let theme = theme(theme_name);
     match color_mode {
-        ColorMode::Opacity => theme.grade3,
+        ColorMode::Opacity => &theme.grade3,
         ColorMode::Grade => match grade(count) {
-            "grade1" => theme.grade1,
-            "grade2" => theme.grade2,
-            "grade3" => theme.grade3,
-            "grade4" => theme.grade4,
-            _ => theme.grade0,
+            "grade1" => &theme.grade1,
+            "grade2" => &theme.grade2,
+            "grade3" => &theme.grade3,
+            "grade4" => &theme.grade4,
+            _ => &theme.grade0,
         },
     }
 }
@@ -877,7 +828,8 @@ mod tests {
             show_current_week_only: true,
             week_start_day: WeekdayStart::Sunday,
             highlight_current_day: true,
-            theme_name: ThemeName::Dracula,
+            theme_mode: ThemeMode::Custom,
+            custom_hue: 280,
             color_mode: ColorMode::Grade,
         };
 
@@ -899,7 +851,8 @@ mod tests {
                 "show_current_week_only": false,
                 "week_start_day": "monday",
                 "highlight_current_day": true,
-                "theme_name": "standard",
+                "theme_mode": "custom",
+                "custom_hue": 200,
                 "color_mode": "opacity",
                 "panel_position": "right",
                 "panel_index": 4
@@ -910,6 +863,8 @@ mod tests {
         assert_eq!(settings.github_username, "weekly-user");
         assert!(settings.highlight_current_day);
         assert_eq!(settings.color_mode, ColorMode::Opacity);
+        assert_eq!(settings.theme_mode, ThemeMode::Custom);
+        assert_eq!(settings.custom_hue, 200);
     }
 
     fn unique_test_path(name: &str) -> PathBuf {
