@@ -23,7 +23,7 @@ install: build
         'Categories=Development;' \
         'Keywords=COSMIC;Applet;Git;Commits;GitHub;GitLab;Gitea;' \
         'X-CosmicApplet=true' \
-        'X-CosmicHoverPopup=Auto' \
+        'X-CosmicHoverPopup=None' \
         > "{{desktop_file}}"
     update-desktop-database "{{apps_dir}}" 2>/dev/null || true
 

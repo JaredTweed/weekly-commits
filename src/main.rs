@@ -71,9 +71,12 @@ impl cosmic::Application for Applet {
                     return destroy_popup(popup);
                 }
                 let new_id = SurfaceId::unique();
+                let Some(main_id) = self.core.main_window_id() else {
+                    return Task::none();
+                };
                 self.popup = Some(new_id);
                 let mut settings = self.core.applet.get_popup_settings(
-                    self.core.main_window_id().unwrap(),
+                    main_id,
                     new_id,
                     None,
                     None,
@@ -104,7 +107,9 @@ impl cosmic::Application for Applet {
                 self.refreshing = false;
             }
             Message::OpenSettings => {
-                let _ = launch_settings();
+                if let Err(e) = launch_settings() {
+                    tracing::error!("failed to launch settings: {e}");
+                }
             }
         }
         Task::none()
@@ -129,13 +134,12 @@ impl cosmic::Application for Applet {
             .button_from_element(row.align_y(Alignment::Center), false)
             .on_press(Message::TogglePopup);
 
-        Element::from(self.core.applet.applet_tooltip(
+        widget::tooltip::tooltip(
             button,
-            "Weekly Commits",
-            self.popup.is_some(),
-            |_| Message::TogglePopup,
-            None,
-        ))
+            widget::text("Weekly Commits"),
+            widget::tooltip::Position::Top,
+        )
+        .into()
     }
 
     fn view_window(&self, id: SurfaceId) -> Element<'_, Self::Message> {

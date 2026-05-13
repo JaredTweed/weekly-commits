@@ -86,7 +86,9 @@ impl Application for SettingsApp {
             Message::CurrentWeekChanged(value) => self.settings.show_current_week_only = value,
             Message::HighlightTodayChanged(value) => self.settings.highlight_current_day = value,
             Message::Saved => {
-                let _ = weekly::save_settings(&self.settings);
+                if let Err(e) = weekly::save_settings(&self.settings) {
+                    tracing::error!("failed to save settings: {e}");
+                }
                 self.saved_notice = true;
             }
         }
@@ -217,7 +219,10 @@ impl SettingsApp {
     fn update_title(&mut self) -> Task<Action<Message>> {
         let title = "Weekly Commits Settings".to_string();
         self.set_header_title(title.clone());
-        self.set_window_title(title, self.core.main_window_id().unwrap())
+        if let Some(id) = self.core.main_window_id() {
+            return self.set_window_title(title, id);
+        }
+        Task::none()
     }
 }
 

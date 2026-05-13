@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::path::PathBuf;
 use std::process::Stdio;
+use std::time::Duration as StdDuration;
 use time::format_description::well_known::Rfc3339;
 use time::macros::format_description;
 use time::{Date, Duration, OffsetDateTime};
@@ -335,6 +336,7 @@ pub enum FetchError {
     Http(String),
     Parse(String),
     Io(std::io::Error),
+    Timeout,
 }
 
 impl fmt::Display for FetchError {
@@ -344,6 +346,7 @@ impl fmt::Display for FetchError {
             Self::Http(e) => write!(f, "http error: {e}"),
             Self::Parse(e) => write!(f, "parse error: {e}"),
             Self::Io(e) => write!(f, "io error: {e}"),
+            Self::Timeout => write!(f, "request timed out"),
         }
     }
 }
@@ -380,8 +383,10 @@ pub fn save_settings(settings: &Settings) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let json = serde_json::to_string_pretty(settings).expect("settings serialize");
-    std::fs::write(path, json)
+    let json = serde_json::to_string_pretty(settings).unwrap_or_default();
+    let tmp = path.with_extension("tmp");
+    std::fs::write(&tmp, &json)?;
+    std::fs::rename(&tmp, &path)
 }
 
 pub fn dates_for(settings: &Settings) -> [Date; 7] {
@@ -407,7 +412,7 @@ pub fn dates_for(settings: &Settings) -> [Date; 7] {
 
 pub fn date_key(date: Date) -> String {
     date.format(format_description!("[year]-[month]-[day]"))
-        .expect("date format")
+        .unwrap_or_default()
 }
 
 pub fn date_label(date: Date) -> String {
@@ -436,7 +441,7 @@ pub fn date_label(date: Date) -> String {
 }
 
 pub fn cache_key(context: &CacheContext) -> String {
-    serde_json::to_string(context).expect("cache context serialize")
+    serde_json::to_string(context).unwrap_or_default()
 }
 
 pub fn cache_context(settings: &Settings) -> CacheContext {
@@ -463,14 +468,16 @@ pub async fn fetch_with_cache(settings: Settings) -> Contributions {
     let key = cache_key(&context);
     match fetch_live(&settings, dates).await {
         Ok(counts) => {
-            let _ = save_cache(CacheEntry {
+            if let Err(e) = save_cache(CacheEntry {
                 key,
                 context,
                 counts,
                 updated_at: OffsetDateTime::now_utc()
                     .format(&Rfc3339)
                     .unwrap_or_default(),
-            });
+            }) {
+                tracing::warn!("failed to save cache: {e}");
+            }
             Contributions {
                 dates,
                 counts,
@@ -507,8 +514,10 @@ fn save_cache(entry: CacheEntry) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let json = serde_json::to_string_pretty(&entry).expect("cache serialize");
-    std::fs::write(path, json)
+    let json = serde_json::to_string_pretty(&entry).unwrap_or_default();
+    let tmp = path.with_extension("tmp");
+    std::fs::write(&tmp, &json)?;
+    std::fs::rename(&tmp, &path)
 }
 
 async fn fetch_live(settings: &Settings, dates: [Date; 7]) -> Result<[u32; 7], FetchError> {
@@ -535,10 +544,20 @@ async fn curl(args: Vec<String>, body: Option<String>) -> Result<String, FetchEr
             stdin.write_all(body.as_bytes()).await?;
         }
     }
-    let output = child.wait_with_output().await?;
+    let output = tokio::time::timeout(StdDuration::from_secs(30), child.wait_with_output())
+        .await
+        .map_err(|_| FetchError::Timeout)?
+        .map_err(FetchError::Io)?;
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-        return Err(FetchError::Http(stderr));
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let msg = if stdout.trim().is_empty() {
+            stderr
+        } else {
+            format!("{stderr}\n{stdout}")
+        };
+        let msg = msg.trim().to_string();
+        return Err(FetchError::Http(msg));
     }
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
@@ -552,10 +571,10 @@ async fn fetch_github(settings: &Settings, dates: [Date; 7]) -> Result<[u32; 7],
 
     let from = (OffsetDateTime::now_utc() - Duration::days(10))
         .format(&Rfc3339)
-        .unwrap();
+        .unwrap_or_default();
     let to = (OffsetDateTime::now_utc() + Duration::days(3))
         .format(&Rfc3339)
-        .unwrap();
+        .unwrap_or_default();
     let query = format!(
         r#"query {{
             user(login: "{username}") {{
@@ -766,6 +785,9 @@ pub fn box_alpha(count: u32, color_mode: ColorMode) -> f32 {
 
 pub fn hex_to_rgba(hex: &str, alpha: f32) -> cosmic::iced::Color {
     let hex = hex.trim_start_matches('#');
+    if hex.len() < 6 {
+        return cosmic::iced::Color::from_rgba8(255, 255, 255, alpha);
+    }
     let r = u8::from_str_radix(&hex[0..2], 16).unwrap_or(255);
     let g = u8::from_str_radix(&hex[2..4], 16).unwrap_or(255);
     let b = u8::from_str_radix(&hex[4..6], 16).unwrap_or(255);
