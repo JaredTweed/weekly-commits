@@ -273,8 +273,9 @@ impl cosmic::Application for Applet {
     }
 }
 
+// 7 boxes × 14px + 6 spacers × 4px + 8px container padding + 10px AppletIcon button padding
 fn panel_button_width() -> f32 {
-    7.0 * (weekly::BOX_SIZE + 2.0) + 6.0 * weekly::BOX_MARGIN + 8.0
+    7.0 * weekly::BOX_SIZE + 6.0 * weekly::BOX_MARGIN + 18.0
 }
 
 fn commit_box<'a>(
