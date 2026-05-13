@@ -232,18 +232,20 @@ impl Application for SettingsApp {
         let content = widget::Column::new()
             .spacing(24)
             .padding(24)
-            .max_width(650)
-            .push(service_group)
-            .push(refresh_group)
-            .push(display_group)
-            .push(widget::Space::new().height(Length::Fill))
-            .push(info_group);
-
-        widget::container(widget::scrollable(content))
             .width(Length::Fill)
-            .height(Length::Fill)
-            .align_x(Alignment::Center)
-            .into()
+            .push(widget::container(service_group).width(Length::Fill))
+            .push(widget::container(refresh_group).width(Length::Fill))
+            .push(widget::container(display_group).width(Length::Fill))
+            .push(widget::container(info_group).width(Length::Fill));
+
+        widget::container(
+            widget::container(widget::scrollable(content))
+                .max_width(650),
+        )
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .align_x(Alignment::Center)
+        .into()
     }
 }
 
