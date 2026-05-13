@@ -162,16 +162,19 @@ impl cosmic::Application for Applet {
                 .center_y(Length::Fill)
                 .padding([0, 4]),
         )
+        .width(Length::Fixed(panel_button_width()))
         .class(cosmic::theme::Button::AppletIcon)
         .on_press_with_rectangle(|offset, bounds| Message::TogglePopup { offset, bounds });
 
-        Element::from(self.core.applet.applet_tooltip::<Message>(
+        let content = self.core.applet.applet_tooltip::<Message>(
             button,
             "Weekly Commits",
             self.popup.is_some(),
             Message::Surface,
             None,
-        ))
+        );
+
+        Element::from(self.core.applet.autosize_window(content))
     }
 
     fn view_window(&self, id: SurfaceId) -> Element<'_, Self::Message> {
@@ -264,6 +267,10 @@ impl cosmic::Application for Applet {
     fn style(&self) -> Option<cosmic::iced::theme::Style> {
         Some(cosmic::applet::style())
     }
+}
+
+fn panel_button_width() -> f32 {
+    7.0 * (weekly::BOX_SIZE + weekly::BOX_MARGIN) + 8.0
 }
 
 fn commit_box<'a>(
