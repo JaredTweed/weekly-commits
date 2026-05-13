@@ -147,13 +147,17 @@ impl cosmic::Application for Applet {
         let row = self.data.counts.iter().enumerate().fold(
             widget::Row::new().spacing(0),
             |row, (index, count)| {
-                row.push(commit_box(
+                let row = row.push(commit_box(
                     *count,
                     self.settings.theme_name,
                     self.settings.color_mode,
                     self.settings.highlight_current_day && self.data.dates[index] == today(),
-                ))
-                .push(widget::Space::new().width(Length::Fixed(weekly::BOX_MARGIN)))
+                ));
+                if index < 6 {
+                    row.push(widget::Space::new().width(Length::Fixed(weekly::BOX_MARGIN)))
+                } else {
+                    row
+                }
             },
         );
 
@@ -270,7 +274,7 @@ impl cosmic::Application for Applet {
 }
 
 fn panel_button_width() -> f32 {
-    7.0 * (weekly::BOX_SIZE + weekly::BOX_MARGIN) + 8.0
+    7.0 * (weekly::BOX_SIZE + 2.0) + 6.0 * weekly::BOX_MARGIN + 8.0
 }
 
 fn commit_box<'a>(
