@@ -14,7 +14,8 @@ enum Message {
     },
     PopupClosed(SurfaceId),
     Refresh,
-    Loaded(weekly::Contributions),
+    SettingsPoll,
+    Loaded(weekly::Settings, weekly::Contributions),
     OpenSettings,
     Surface(cosmic::surface::Action),
     Tick,
@@ -56,10 +57,11 @@ impl cosmic::Application for Applet {
             data,
             refreshing: true,
         };
+        let requested_settings = settings.clone();
         (
             app,
-            Task::perform(weekly::fetch_with_cache(settings), |data| {
-                cosmic::Action::App(Message::Loaded(data))
+            Task::perform(weekly::fetch_with_cache(settings), move |data| {
+                cosmic::Action::App(Message::Loaded(requested_settings, data))
             }),
         )
     }
@@ -105,13 +107,27 @@ impl cosmic::Application for Applet {
                 self.settings = weekly::load_settings();
                 self.refreshing = true;
                 let settings = self.settings.clone();
-                return Task::perform(weekly::fetch_with_cache(settings), |data| {
-                    cosmic::Action::App(Message::Loaded(data))
+                let requested_settings = settings.clone();
+                return Task::perform(weekly::fetch_with_cache(settings), move |data| {
+                    cosmic::Action::App(Message::Loaded(requested_settings, data))
                 });
             }
-            Message::Loaded(data) => {
-                self.data = data;
-                self.refreshing = false;
+            Message::SettingsPoll => {
+                let settings = weekly::load_settings();
+                if settings != self.settings {
+                    self.settings = settings.clone();
+                    self.refreshing = true;
+                    let requested_settings = settings.clone();
+                    return Task::perform(weekly::fetch_with_cache(settings), move |data| {
+                        cosmic::Action::App(Message::Loaded(requested_settings, data))
+                    });
+                }
+            }
+            Message::Loaded(settings, data) => {
+                if settings == self.settings {
+                    self.data = data;
+                    self.refreshing = false;
+                }
             }
             Message::OpenSettings => {
                 if let Err(e) = launch_settings() {
@@ -141,11 +157,13 @@ impl cosmic::Application for Applet {
             },
         );
 
-        let button = self
-            .core
-            .applet
-            .button_from_element(row.align_y(Alignment::Center), false)
-            .on_press_with_rectangle(|offset, bounds| Message::TogglePopup { offset, bounds });
+        let button = widget::button::custom(
+            widget::container(row.align_y(Alignment::Center))
+                .center_y(Length::Fill)
+                .padding([0, 4]),
+        )
+        .class(cosmic::theme::Button::AppletIcon)
+        .on_press_with_rectangle(|offset, bounds| Message::TogglePopup { offset, bounds });
 
         Element::from(self.core.applet.applet_tooltip::<Message>(
             button,
@@ -236,8 +254,11 @@ impl cosmic::Application for Applet {
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
-        cosmic::iced::time::every(Duration::from_secs(self.settings.refresh_interval.max(60)))
-            .map(|_| Message::Tick)
+        Subscription::batch([
+            cosmic::iced::time::every(Duration::from_secs(self.settings.refresh_interval.max(60)))
+                .map(|_| Message::Tick),
+            cosmic::iced::time::every(Duration::from_millis(500)).map(|_| Message::SettingsPoll),
+        ])
     }
 
     fn style(&self) -> Option<cosmic::iced::theme::Style> {

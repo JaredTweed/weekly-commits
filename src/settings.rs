@@ -21,11 +21,9 @@ enum Message {
     ColorModeSelected(usize),
     WeekStartSelected(usize),
     IntervalSelected(usize),
-    PanelPositionSelected(usize),
     UsernameChanged(String),
     TokenChanged(String),
     InstanceChanged(String),
-    PanelIndexChanged(String),
     CurrentWeekChanged(bool),
     HighlightTodayChanged(bool),
     OpenTokenUrl,
@@ -34,7 +32,6 @@ enum Message {
 struct SettingsApp {
     core: Core,
     settings: weekly::Settings,
-    panel_index_text: String,
 }
 
 impl Application for SettingsApp {
@@ -53,11 +50,7 @@ impl Application for SettingsApp {
 
     fn init(core: Core, _flags: Self::Flags) -> (Self, Task<Action<Self::Message>>) {
         let settings = weekly::load_settings();
-        let mut app = Self {
-            core,
-            panel_index_text: settings.panel_index.to_string(),
-            settings,
-        };
+        let mut app = Self { core, settings };
         let task = app.update_title();
         (app, task)
     }
@@ -91,22 +84,9 @@ impl Application for SettingsApp {
                     self.settings.refresh_interval = *seconds;
                 }
             }
-            Message::PanelPositionSelected(index) => {
-                if let Some(value) = weekly::PanelPosition::ALL.get(index) {
-                    self.settings.panel_position = *value;
-                }
-            }
             Message::UsernameChanged(value) => self.settings.github_username = value,
             Message::TokenChanged(value) => self.settings.github_token = value,
             Message::InstanceChanged(value) => self.settings.custom_instance_url = value,
-            Message::PanelIndexChanged(value) => {
-                self.panel_index_text = value;
-                if let Ok(index) = self.panel_index_text.parse::<u32>() {
-                    self.settings.panel_index = index.min(20);
-                } else {
-                    should_save = false;
-                }
-            }
             Message::CurrentWeekChanged(value) => self.settings.show_current_week_only = value,
             Message::HighlightTodayChanged(value) => self.settings.highlight_current_day = value,
             Message::OpenTokenUrl => {
@@ -140,11 +120,6 @@ impl Application for SettingsApp {
             .collect();
         let interval_labels: Vec<&'static str> =
             REFRESH_INTERVALS.iter().map(|(_, label)| *label).collect();
-        let position_labels: Vec<&'static str> = weekly::PanelPosition::ALL
-            .iter()
-            .map(|value| value.label())
-            .collect();
-
         let instance_visible = matches!(
             self.settings.service_type,
             weekly::ServiceType::Gitea | weekly::ServiceType::GitLab
@@ -246,26 +221,6 @@ impl Application for SettingsApp {
                 ),
             ));
 
-        let position_group = widget::settings::section()
-            .title("Panel Position")
-            .add(settings_item(
-                "Location",
-                "Which section of the panel to use",
-                dropdown(
-                    position_labels,
-                    selected_index(&weekly::PanelPosition::ALL, self.settings.panel_position),
-                    Message::PanelPositionSelected,
-                ),
-            ))
-            .add(settings_item(
-                "Index",
-                "Position within the chosen section (0 is leftmost)",
-                widget::text_input("", &self.panel_index_text)
-                    .on_input(Message::PanelIndexChanged)
-                    .width(Length::Fixed(90.0))
-                    .into(),
-            ));
-
         let info_group = widget::settings::section()
             .title(token_title(self.settings.service_type))
             .add(settings_item(
@@ -281,7 +236,6 @@ impl Application for SettingsApp {
             .push(service_group)
             .push(refresh_group)
             .push(display_group)
-            .push(position_group)
             .push(widget::Space::new().height(Length::Fill))
             .push(info_group);
 

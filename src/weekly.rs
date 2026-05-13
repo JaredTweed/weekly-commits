@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fmt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::time::Duration as StdDuration;
 use time::format_description::well_known::Rfc3339;
@@ -101,26 +101,6 @@ impl WeekdayStart {
             Self::Thursday => 4,
             Self::Friday => 5,
             Self::Saturday => 6,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum PanelPosition {
-    Left,
-    Center,
-    Right,
-}
-
-impl PanelPosition {
-    pub const ALL: [PanelPosition; 3] = [Self::Left, Self::Center, Self::Right];
-
-    pub fn label(self) -> &'static str {
-        match self {
-            Self::Left => "Left",
-            Self::Center => "Center",
-            Self::Right => "Right",
         }
     }
 }
@@ -294,7 +274,7 @@ pub fn theme(name: ThemeName) -> Theme {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
     pub service_type: ServiceType,
@@ -307,8 +287,6 @@ pub struct Settings {
     pub highlight_current_day: bool,
     pub theme_name: ThemeName,
     pub color_mode: ColorMode,
-    pub panel_position: PanelPosition,
-    pub panel_index: u32,
 }
 
 impl Default for Settings {
@@ -324,8 +302,6 @@ impl Default for Settings {
             highlight_current_day: false,
             theme_name: ThemeName::Standard,
             color_mode: ColorMode::Opacity,
-            panel_position: PanelPosition::Right,
-            panel_index: 0,
         }
     }
 }
@@ -396,21 +372,28 @@ pub fn cache_path() -> PathBuf {
 }
 
 pub fn load_settings() -> Settings {
-    std::fs::read_to_string(config_path())
+    load_settings_from_path(&config_path())
+}
+
+fn load_settings_from_path(path: &Path) -> Settings {
+    std::fs::read_to_string(path)
         .ok()
         .and_then(|s| serde_json::from_str(&s).ok())
         .unwrap_or_default()
 }
 
 pub fn save_settings(settings: &Settings) -> std::io::Result<()> {
-    let path = config_path();
+    save_settings_to_path(settings, &config_path())
+}
+
+fn save_settings_to_path(settings: &Settings, path: &Path) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
     let json = serde_json::to_string_pretty(settings).unwrap_or_default();
     let tmp = path.with_extension("tmp");
     std::fs::write(&tmp, &json)?;
-    std::fs::rename(&tmp, &path)
+    std::fs::rename(&tmp, path)
 }
 
 pub fn dates_for(settings: &Settings) -> [Date; 7] {
@@ -880,5 +863,62 @@ mod tests {
         for window in dates.windows(2) {
             assert_eq!(window[0] + Duration::days(1), window[1]);
         }
+    }
+
+    #[test]
+    fn settings_save_and_load_round_trip() {
+        let path = unique_test_path("settings-round-trip.json");
+        let settings = Settings {
+            service_type: ServiceType::GitLab,
+            custom_instance_url: "https://gitlab.example.com".to_string(),
+            github_username: "weekly-user".to_string(),
+            github_token: "secret-token".to_string(),
+            refresh_interval: 900,
+            show_current_week_only: true,
+            week_start_day: WeekdayStart::Sunday,
+            highlight_current_day: true,
+            theme_name: ThemeName::Dracula,
+            color_mode: ColorMode::Grade,
+        };
+
+        save_settings_to_path(&settings, &path).expect("settings should save");
+        assert_eq!(load_settings_from_path(&path), settings);
+
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn settings_load_ignores_removed_panel_position_fields() {
+        let settings: Settings = serde_json::from_str(
+            r#"{
+                "service_type": "git-hub",
+                "custom_instance_url": "",
+                "github_username": "weekly-user",
+                "github_token": "secret-token",
+                "refresh_interval": 21600,
+                "show_current_week_only": false,
+                "week_start_day": "monday",
+                "highlight_current_day": true,
+                "theme_name": "standard",
+                "color_mode": "opacity",
+                "panel_position": "right",
+                "panel_index": 4
+            }"#,
+        )
+        .expect("unknown removed fields should be ignored");
+
+        assert_eq!(settings.github_username, "weekly-user");
+        assert!(settings.highlight_current_day);
+        assert_eq!(settings.color_mode, ColorMode::Opacity);
+    }
+
+    fn unique_test_path(name: &str) -> PathBuf {
+        let mut path = std::env::temp_dir();
+        path.push(format!(
+            "cosmic-weekly-commits-test-{}-{name}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_file(&path);
+        path
     }
 }
