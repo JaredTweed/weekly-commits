@@ -26,6 +26,9 @@ install: build
         'X-CosmicHoverPopup=None' \
         > "{{desktop_file}}"
     update-desktop-database "{{apps_dir}}" 2>/dev/null || true
+    @printf '\n✓ Weekly Commits installed successfully!\n\n'
+    @printf 'To add the applet:\n'
+    @printf '  COSMIC Settings → Desktop → Panel → Configure Panel Applets → Add Weekly Commits\n'
 
 uninstall:
     rm -f "{{bin_dir}}/cosmic-weekly-commits" "{{bin_dir}}/cosmic-weekly-commits-settings" "{{desktop_file}}"
