@@ -107,6 +107,26 @@ impl WeekdayStart {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+pub enum PanelPosition {
+    Left,
+    Center,
+    Right,
+}
+
+impl PanelPosition {
+    pub const ALL: [PanelPosition; 3] = [Self::Left, Self::Center, Self::Right];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Left => "Left",
+            Self::Center => "Center",
+            Self::Right => "Right",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum ThemeName {
     Standard,
     Classic,
@@ -287,6 +307,8 @@ pub struct Settings {
     pub highlight_current_day: bool,
     pub theme_name: ThemeName,
     pub color_mode: ColorMode,
+    pub panel_position: PanelPosition,
+    pub panel_index: u32,
 }
 
 impl Default for Settings {
@@ -302,6 +324,8 @@ impl Default for Settings {
             highlight_current_day: false,
             theme_name: ThemeName::Standard,
             color_mode: ColorMode::Opacity,
+            panel_position: PanelPosition::Right,
+            panel_index: 0,
         }
     }
 }

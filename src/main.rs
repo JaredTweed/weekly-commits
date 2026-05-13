@@ -1,18 +1,22 @@
 use cosmic::app::Core;
 use cosmic::iced::platform_specific::shell::commands::popup::{destroy_popup, get_popup};
 use cosmic::iced::window::Id as SurfaceId;
-use cosmic::iced::{Alignment, Background, Border, Length, Limits, Subscription};
+use cosmic::iced::{Alignment, Background, Border, Length, Limits, Rectangle, Subscription};
 use cosmic::{Element, Task, widget};
 use cosmic_weekly_commits::weekly;
 use std::time::Duration;
 
 #[derive(Debug, Clone)]
 enum Message {
-    TogglePopup,
+    TogglePopup {
+        offset: cosmic::iced::Vector,
+        bounds: Rectangle,
+    },
     PopupClosed(SurfaceId),
     Refresh,
     Loaded(weekly::Contributions),
     OpenSettings,
+    Surface(cosmic::surface::Action),
     Tick,
 }
 
@@ -66,7 +70,7 @@ impl cosmic::Application for Applet {
 
     fn update(&mut self, message: Self::Message) -> Task<cosmic::Action<Self::Message>> {
         match message {
-            Message::TogglePopup => {
+            Message::TogglePopup { offset, bounds } => {
                 if let Some(popup) = self.popup.take() {
                     return destroy_popup(popup);
                 }
@@ -75,13 +79,16 @@ impl cosmic::Application for Applet {
                     return Task::none();
                 };
                 self.popup = Some(new_id);
-                let mut settings = self.core.applet.get_popup_settings(
-                    main_id,
-                    new_id,
-                    None,
-                    None,
-                    None,
-                );
+                let mut settings = self
+                    .core
+                    .applet
+                    .get_popup_settings(main_id, new_id, None, None, None);
+                settings.positioner.anchor_rect = Rectangle {
+                    x: (bounds.x - offset.x) as i32,
+                    y: (bounds.y - offset.y) as i32,
+                    width: bounds.width as i32,
+                    height: bounds.height as i32,
+                };
                 settings.positioner.size_limits = Limits::NONE
                     .min_width(300.0)
                     .max_width(360.0)
@@ -111,13 +118,18 @@ impl cosmic::Application for Applet {
                     tracing::error!("failed to launch settings: {e}");
                 }
             }
+            Message::Surface(action) => {
+                return cosmic::task::message(cosmic::Action::Cosmic(
+                    cosmic::app::Action::Surface(action),
+                ));
+            }
         }
         Task::none()
     }
 
     fn view(&self) -> Element<'_, Self::Message> {
         let row = self.data.counts.iter().enumerate().fold(
-            widget::Row::new().spacing(weekly::BOX_MARGIN),
+            widget::Row::new().spacing(0),
             |row, (index, count)| {
                 row.push(commit_box(
                     *count,
@@ -125,6 +137,7 @@ impl cosmic::Application for Applet {
                     self.settings.color_mode,
                     self.settings.highlight_current_day && self.data.dates[index] == today(),
                 ))
+                .push(widget::Space::new().width(Length::Fixed(weekly::BOX_MARGIN)))
             },
         );
 
@@ -132,14 +145,15 @@ impl cosmic::Application for Applet {
             .core
             .applet
             .button_from_element(row.align_y(Alignment::Center), false)
-            .on_press(Message::TogglePopup);
+            .on_press_with_rectangle(|offset, bounds| Message::TogglePopup { offset, bounds });
 
-        widget::tooltip::tooltip(
+        Element::from(self.core.applet.applet_tooltip::<Message>(
             button,
-            widget::text("Weekly Commits"),
-            widget::tooltip::Position::Top,
-        )
-        .into()
+            "Weekly Commits",
+            self.popup.is_some(),
+            Message::Surface,
+            None,
+        ))
     }
 
     fn view_window(&self, id: SurfaceId) -> Element<'_, Self::Message> {
