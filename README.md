@@ -6,12 +6,16 @@ A COSMIC desktop applet that mirrors the GNOME Weekly Commits extension from
 ## Install
 
 ```sh
-just build
-just install
+just build && just install
 ```
 
-After installing, log out of your COSMIC session and log back in so the
-applet is picked up by the desktop shell.
+After installing, log out of your COSMIC session and log back in so the applet is picked up by the desktop shell.
+
+## Update
+To apply changes, just pasted this into this directory of the terminal, to update the changes and restart the panel. 
+```sh
+just build && just install && pkill cosmic-panel
+```
 
 ## Run Manually
 

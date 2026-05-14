@@ -92,8 +92,8 @@ impl cosmic::Application for Applet {
                     height: bounds.height as i32,
                 };
                 settings.positioner.size_limits = Limits::NONE
-                    .min_width(300.0)
-                    .max_width(360.0)
+                    .min_width(200.0)
+                    .max_width(300.0) // it cannot be smaller than 360x360 due to libcosmos constraints
                     .min_height(1.0)
                     .max_height(520.0);
                 return get_popup(settings);
