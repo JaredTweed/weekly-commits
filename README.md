@@ -31,3 +31,7 @@ cargo run --bin cosmic-weekly-commits-settings
 
 Settings are stored at `$XDG_CONFIG_HOME/cosmic-weekly-commits/config.json`.
 The fallback cache is stored at `$XDG_CACHE_HOME/cosmic-weekly-commits/commits-cache-v1.json`.
+
+## Notes
+
+This repo is inspired heavily the GNOME extension https://github.com/funinkina/weekly-commits.
