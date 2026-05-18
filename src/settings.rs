@@ -39,7 +39,7 @@ impl Application for SettingsApp {
     type Executor = executor::Default;
     type Flags = ();
     type Message = Message;
-    const APP_ID: &'static str = "dev.funinkina.weekly-commits.cosmic.settings";
+    const APP_ID: &'static str = "io.github.JaredTweed.WeeklyCommits.Settings";
 
     fn core(&self) -> &Core {
         &self.core
@@ -257,14 +257,11 @@ impl Application for SettingsApp {
             .push(widget::container(display_group).width(Length::Fill))
             .push(widget::container(info_group).width(Length::Fill));
 
-        widget::container(
-            widget::container(widget::scrollable(content))
-                .max_width(650),
-        )
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .align_x(Alignment::Center)
-        .into()
+        widget::container(widget::container(widget::scrollable(content)).max_width(650))
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .align_x(Alignment::Center)
+            .into()
     }
 }
 

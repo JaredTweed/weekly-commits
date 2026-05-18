@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.JaredTweed.WeeklyCommits</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Weekly Commits</name>
+  <summary>Show weekly git contributions in the COSMIC panel</summary>
+  <description>
+    <p>
+      Weekly Commits is a COSMIC panel applet that shows a compact seven-day
+      contribution strip for GitHub, GitLab, Gitea, and Forgejo accounts.
+    </p>
+    <p>
+      It supports configurable refresh intervals, week start days, color
+      themes, and an optional current-day highlight.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.JaredTweed.WeeklyCommits.desktop</launchable>
+  <categories>
+    <category>Development</category>
+  </categories>
+  <url type="homepage">https://github.com/JaredTweed/weekly-commits</url>
+  <url type="bugtracker">https://github.com/JaredTweed/weekly-commits/issues</url>
+  <developer id="io.github.jaredtweed">
+    <name>Jared Tweed</name>
+  </developer>
+  <releases>
+    <release version="0.1.0" date="2026-05-18">
+      <description>
+        <p>Initial COSMIC Flatpak release.</p>
+      </description>
+    </release>
+  </releases>
+  <content_rating type="oars-1.1" />
+</component>

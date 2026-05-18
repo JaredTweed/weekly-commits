@@ -10,7 +10,7 @@ use time::macros::format_description;
 use time::{Date, Duration, OffsetDateTime};
 use tokio::process::Command;
 
-pub const APP_ID: &str = "dev.funinkina.weekly-commits.cosmic";
+pub const APP_ID: &str = "io.github.JaredTweed.WeeklyCommits";
 pub const CONFIG_DIR: &str = "cosmic-weekly-commits";
 pub const CACHE_FILE: &str = "commits-cache-v1.json";
 pub const BOX_SIZE: f32 = 14.0;

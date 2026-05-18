@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Weekly Commits
+Comment=Show weekly git contributions in the COSMIC panel
+Exec=cosmic-weekly-commits
+Terminal=false
+Type=Application
+StartupNotify=true
+NotShowIn=X-COSMIC;
+Categories=Development;
+Keywords=COSMIC;Applet;Git;Commits;GitHub;GitLab;Gitea;Forgejo;
+Icon=io.github.JaredTweed.WeeklyCommits
+X-CosmicApplet=true
+X-CosmicHoverPopup=None

@@ -3,6 +3,7 @@ set shell := ["bash", "-uc"]
 bin_dir := env_var("HOME") / ".local/bin"
 apps_dir := env_var("HOME") / ".local/share/applications"
 desktop_file := apps_dir / "dev.funinkina.weekly-commits.cosmic.desktop"
+app_id := "io.github.JaredTweed.WeeklyCommits"
 
 build:
     cargo build --release
@@ -24,12 +25,12 @@ install: build
         'Keywords=COSMIC;Applet;Git;Commits;GitHub;GitLab;Gitea;' \
         'X-CosmicApplet=true' \
         'X-CosmicHoverPopup=None' \
-        > "{{desktop_file}}"
+        > "{{apps_dir}}/{{app_id}}.desktop"
     update-desktop-database "{{apps_dir}}" 2>/dev/null || true
     @printf '\n✓ Weekly Commits installed successfully!\n\n'
     @printf 'To add the applet:\n'
     @printf '  COSMIC Settings → Desktop → Panel → Configure Panel Applets → Add Weekly Commits\n'
 
 uninstall:
-    rm -f "{{bin_dir}}/cosmic-weekly-commits" "{{bin_dir}}/cosmic-weekly-commits-settings" "{{desktop_file}}"
+    rm -f "{{bin_dir}}/cosmic-weekly-commits" "{{bin_dir}}/cosmic-weekly-commits-settings" "{{desktop_file}}" "{{apps_dir}}/{{app_id}}.desktop"
     update-desktop-database "{{apps_dir}}" 2>/dev/null || true

@@ -3,6 +3,9 @@ name = "cosmic-weekly-commits"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
+repository = "https://github.com/JaredTweed/weekly-commits"
+homepage = "https://github.com/JaredTweed/weekly-commits"
+description = "A COSMIC panel applet for showing weekly git contributions."
 default-run = "cosmic-weekly-commits"
 
 [dependencies]

@@ -3,6 +3,9 @@
 A COSMIC desktop applet that mirrors the GNOME Weekly Commits extension from
 `weekly-commits-main.zip`.
 
+Weekly Commits shows the last seven days of contributions from GitHub, GitLab,
+Gitea, or Forgejo in the COSMIC panel.
+
 ## Install
 
 ```sh
